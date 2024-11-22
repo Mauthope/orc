@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gráfico Interativo com Tema Escuro</title>
+    <title>Gráfico Interativo com Rótulos</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -74,7 +74,7 @@
                         label: 'Linha do Valor 100',
                         data: Array(32).fill(100),
                         borderColor: 'orange',
-                        borderWidth: 2,
+                        borderWidth: 1,
                         borderDash: [10, 5],
                         fill: false,
                         pointRadius: 0,
@@ -92,6 +92,22 @@
                     tooltip: {
                         callbacks: {
                             label: (context) => `R$ ${context.raw || 0}`,
+                        },
+                    },
+                    datalabels: {
+                        display: true,
+                        color: 'white',
+                        font: {
+                            size: 12,
+                        },
+                        formatter: (value, context) => {
+                            const datasetIndex = context.datasetIndex;
+                            if (datasetIndex === 1 && value !== null) {
+                                return `Média: R$ ${value.toFixed(2)}`;
+                            } else if (datasetIndex === 0 && value !== null) {
+                                return `R$ ${value}`;
+                            }
+                            return null;
                         },
                     },
                 },
@@ -121,6 +137,7 @@
                 },
                 onClick: (e) => handleAxisClick(e),
             },
+            plugins: [ChartDataLabels],
         });
 
         function handleAxisClick(event) {
