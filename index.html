@@ -45,7 +45,9 @@
         const ctx = document.getElementById('chart').getContext('2d');
         const days = Array.from({ length: 32 }, (_, i) => i); // Dias de 0 a 31
         const storedValues = JSON.parse(localStorage.getItem('chartValues')) || Array(32).fill(null); // Carregar do LocalStorage
+        const storedMotivos = JSON.parse(localStorage.getItem('chartMotivos')) || Array(32).fill(null); // Carregar os motivos
         const values = [...storedValues]; // Clonar para manipulação
+        const motivos = [...storedMotivos]; // Clonar para motivos
 
         const chart = new Chart(ctx, {
             type: 'line',
@@ -74,7 +76,7 @@
                         label: 'Valor 100',
                         data: Array(32).fill(100),
                         borderColor: 'orange',
-                        borderWidth: 4,
+                        borderWidth: 2,
                         fill: false,
                         pointRadius: 0,
                     }
@@ -90,7 +92,12 @@
                     },
                     tooltip: {
                         callbacks: {
-                            label: (context) => `R$ ${context.raw || 0}`,
+                            label: (context) => {
+                                const value = context.raw || 0;
+                                const day = context.dataIndex;
+                                const motivo = motivos[day] ? `Motivo: ${motivos[day]}` : '';
+                                return [`R$ ${value}`, motivo];
+                            },
                         },
                     },
                     annotation: {
@@ -156,6 +163,11 @@
                 const newValue = prompt(`Digite o valor em R$ para o dia ${roundedDay}:`);
                 if (newValue !== null && !isNaN(newValue)) {
                     values[roundedDay] = parseFloat(newValue);
+
+                    // Solicitar o motivo
+                    const motivo = prompt(`Digite o motivo para o valor no dia ${roundedDay}:`);
+                    motivos[roundedDay] = motivo;
+
                     updateChart();
                 }
             }
@@ -176,6 +188,7 @@
 
             // Salvar no LocalStorage
             localStorage.setItem('chartValues', JSON.stringify(values));
+            localStorage.setItem('chartMotivos', JSON.stringify(motivos));
 
             chart.update();
         }
@@ -183,7 +196,9 @@
         // Botão de limpar
         document.getElementById('clearButton').addEventListener('click', () => {
             localStorage.removeItem('chartValues');
+            localStorage.removeItem('chartMotivos');
             values.fill(null); // Resetar valores
+            motivos.fill(null); // Resetar motivos
             updateChart();
         });
 
