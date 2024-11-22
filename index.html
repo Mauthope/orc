@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gráfico de Linha Interativo</title>
+    <title>Gráfico Interativo com Tema Escuro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -13,23 +13,39 @@
             align-items: center;
             margin: 0;
             padding: 20px;
-            background-color: #f4f4f4;
+            background-color: #121212;
+            color: #ffffff;
         }
         canvas {
-            background-color: #fff;
-            border: 1px solid #ccc;
+            background-color: #1e1e1e;
+            border: 1px solid #333;
             border-radius: 8px;
             margin: 20px 0;
+        }
+        button {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #ff6666;
         }
     </style>
 </head>
 <body>
     <h1>Gráfico de Valores Diários</h1>
     <canvas id="chart" width="800" height="400"></canvas>
+    <button id="clearButton">Limpar Dados</button>
     <script>
         const ctx = document.getElementById('chart').getContext('2d');
         const days = Array.from({ length: 32 }, (_, i) => i); // Dias de 0 a 31
-        const values = Array(32).fill(null); // Valores iniciais
+        const storedValues = JSON.parse(localStorage.getItem('chartValues')) || Array(32).fill(null); // Carregar do LocalStorage
+        const values = [...storedValues]; // Clonar para manipulação
 
         const chart = new Chart(ctx, {
             type: 'line',
@@ -39,16 +55,16 @@
                     {
                         label: 'Valores Digitados',
                         data: values,
-                        borderColor: 'blue',
+                        borderColor: 'cyan',
                         borderWidth: 2,
                         fill: false,
-                        pointBackgroundColor: 'red',
+                        pointBackgroundColor: 'magenta',
                         pointRadius: 5,
                     },
                     {
                         label: 'Média dos Valores',
                         data: Array(32).fill(null), // Inicialmente vazio
-                        borderColor: 'green',
+                        borderColor: 'lime',
                         borderDash: [5, 5],
                         borderWidth: 2,
                         fill: false,
@@ -69,7 +85,9 @@
                 responsive: true,
                 plugins: {
                     legend: {
-                        position: 'top',
+                        labels: {
+                            color: 'white',
+                        },
                     },
                     tooltip: {
                         callbacks: {
@@ -83,15 +101,21 @@
                         title: {
                             display: true,
                             text: 'Valor (R$)',
+                            color: 'white',
                         },
                         ticks: {
                             callback: (value) => `R$ ${value}`,
+                            color: 'white',
                         },
                     },
                     x: {
                         title: {
                             display: true,
                             text: 'Dias',
+                            color: 'white',
+                        },
+                        ticks: {
+                            color: 'white',
                         },
                     },
                 },
@@ -127,8 +151,21 @@
             chart.data.datasets[0].data = values;
             chart.data.datasets[1].data = Array(32).fill(average);
 
+            // Salvar no LocalStorage
+            localStorage.setItem('chartValues', JSON.stringify(values));
+
             chart.update();
         }
+
+        // Botão de limpar
+        document.getElementById('clearButton').addEventListener('click', () => {
+            localStorage.removeItem('chartValues');
+            values.fill(null); // Resetar valores
+            updateChart();
+        });
+
+        // Atualiza o gráfico na inicialização para carregar do LocalStorage
+        updateChart();
     </script>
 </body>
 </html>
