@@ -35,36 +35,22 @@
         button:hover {
             background-color: #ff6666;
         }
-        .motivo-container {
+        .info {
+            color: white;
             margin-top: 10px;
-            color: white;
-        }
-        .motivo-input {
-            background-color: #333;
-            color: white;
-            border: 1px solid #555;
-            padding: 5px;
-            border-radius: 5px;
-            width: 250px;
         }
     </style>
 </head>
 <body>
     <h1>Gráfico de Valores Diários</h1>
     <canvas id="chart" width="800" height="400"></canvas>
-    <div class="motivo-container" id="motivoContainer">
-        <label for="motivoInput">Motivo para o valor:</label>
-        <input type="text" id="motivoInput" class="motivo-input" placeholder="Digite o motivo..." />
-        <button id="saveMotivo">Salvar Motivo</button>
-    </div>
     <button id="clearButton">Limpar Dados</button>
+    <div class="info" id="info"></div>
     <script>
         const ctx = document.getElementById('chart').getContext('2d');
         const days = Array.from({ length: 32 }, (_, i) => i); // Dias de 0 a 31
-        const storedValues = JSON.parse(localStorage.getItem('chartValues')) || Array(32).fill(null); // Carregar do LocalStorage
-        const storedMotivos = JSON.parse(localStorage.getItem('motivos')) || Array(32).fill(null); // Carregar motivos
-        const values = [...storedValues]; // Clonar para manipulação
-        const motivos = [...storedMotivos]; // Clonar para motivos
+        const storedData = JSON.parse(localStorage.getItem('chartData')) || Array(32).fill({ value: null, reason: '' }); // Carregar dados do LocalStorage
+        const data = [...storedData]; // Clonar para manipulação
 
         const chart = new Chart(ctx, {
             type: 'line',
@@ -73,7 +59,7 @@
                 datasets: [
                     {
                         label: 'Valores Digitados',
-                        data: values,
+                        data: data.map(item => item.value),
                         borderColor: 'cyan',
                         borderWidth: 2,
                         fill: false,
@@ -117,7 +103,7 @@
                             avgLabel: {
                                 type: 'label',
                                 content: (ctx) => {
-                                    const average = calculateAverage(values);
+                                    const average = calculateAverage(data.map(item => item.value));
                                     return average !== null ? `Média: R$ ${average.toFixed(2)}` : '';
                                 },
                                 position: 'end',
@@ -172,22 +158,15 @@
 
             // Validar se o clique está dentro do range do gráfico
             if (roundedDay >= 0 && roundedDay <= 31) {
-                const newValue = prompt(`Digite o valor em R$ para o dia ${roundedDay}:`);
-                if (newValue !== null && !isNaN(newValue)) {
-                    values[roundedDay] = parseFloat(newValue);
-                    updateChart();
+                const value = prompt(`Digite o valor em R$ para o dia ${roundedDay}:`);
+                if (value !== null && !isNaN(value)) {
+                    const reason = prompt(`Digite o motivo para o valor de R$ ${value} no dia ${roundedDay}:`);
+                    if (reason !== null) {
+                        data[roundedDay] = { value: parseFloat(value), reason: reason };
+                        updateChart();
+                        showInfo(roundedDay);
+                    }
                 }
-
-                // Mostrar o campo de motivo
-                document.getElementById('motivoContainer').style.display = 'block';
-                document.getElementById('saveMotivo').onclick = function () {
-                    const motivo = document.getElementById('motivoInput').value;
-                    motivos[roundedDay] = motivo;
-                    localStorage.setItem('motivos', JSON.stringify(motivos));
-                    updateChart();
-                    document.getElementById('motivoInput').value = ''; // Limpar campo de motivo
-                    document.getElementById('motivoContainer').style.display = 'none'; // Esconder campo
-                };
             }
         }
 
@@ -198,30 +177,32 @@
         }
 
         function updateChart() {
-            const average = calculateAverage(values);
+            const average = calculateAverage(data.map(item => item.value));
 
             // Atualiza os valores e a linha de média
-            chart.data.datasets[0].data = values;
+            chart.data.datasets[0].data = data.map(item => item.value);
             chart.data.datasets[1].data = Array(32).fill(average);
 
-            // Atualiza as anotações para mostrar os motivos nos pontos
-            chart.data.datasets[0].pointBackgroundColor = (context) => {
-                const index = context.dataIndex;
-                return motivos[index] ? 'yellow' : 'magenta'; // Cor do ponto com motivo
-            };
-
             // Salvar no LocalStorage
-            localStorage.setItem('chartValues', JSON.stringify(values));
+            localStorage.setItem('chartData', JSON.stringify(data));
 
             chart.update();
         }
 
+        function showInfo(day) {
+            const item = data[day];
+            const infoDiv = document.getElementById('info');
+            if (item.value !== null) {
+                infoDiv.innerHTML = `Dia ${day}: R$ ${item.value.toFixed(2)} - Motivo: ${item.reason}`;
+            } else {
+                infoDiv.innerHTML = `Dia ${day}: Sem dados registrados.`;
+            }
+        }
+
         // Botão de limpar
         document.getElementById('clearButton').addEventListener('click', () => {
-            localStorage.removeItem('chartValues');
-            localStorage.removeItem('motivos');
-            values.fill(null); // Resetar valores
-            motivos.fill(null); // Resetar motivos
+            localStorage.removeItem('chartData');
+            data.fill({ value: null, reason: '' }); // Resetar dados
             updateChart();
         });
 
