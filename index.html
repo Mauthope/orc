@@ -178,6 +178,25 @@
             chart.data.datasets[0].data = values;
             chart.data.datasets[1].data = Array(32).fill(average);
 
+            // Atualiza anotações com os motivos
+            const annotations = chart.options.plugins.annotation.annotations;
+            annotations.labels = []; // Limpar anotações antigas
+
+            values.forEach((value, index) => {
+                if (value !== null) {
+                    annotations[`motiveLabel${index}`] = {
+                        type: 'label',
+                        content: motives[index],
+                        position: { x: index, y: value },
+                        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                        color: 'black',
+                        font: {
+                            size: 10,
+                        },
+                    };
+                }
+            });
+
             // Salvar no LocalStorage
             localStorage.setItem('chartValues', JSON.stringify(values));
             localStorage.setItem('chartMotives', JSON.stringify(motives));
