@@ -42,11 +42,15 @@
     <h1>Gráfico de Valores Diários</h1>
     <canvas id="chart" width="800" height="400"></canvas>
     <button id="clearButton">Limpar Dados</button>
+    <div id="values-list"></div> <!-- Para exibir valores e motivos -->
+
     <script>
         const ctx = document.getElementById('chart').getContext('2d');
         const days = Array.from({ length: 32 }, (_, i) => i); // Dias de 0 a 31
         const storedValues = JSON.parse(localStorage.getItem('chartValues')) || Array(32).fill(null); // Carregar do LocalStorage
+        const storedMotives = JSON.parse(localStorage.getItem('chartMotives')) || Array(32).fill(''); // Carregar motivos
         const values = [...storedValues]; // Clonar para manipulação
+        const motives = [...storedMotives]; // Clonar para manipulação
 
         const chart = new Chart(ctx, {
             type: 'line',
@@ -153,7 +157,9 @@
             if (roundedDay >= 0 && roundedDay <= 31) {
                 const newValue = prompt(`Digite o valor em R$ para o dia ${roundedDay}:`);
                 if (newValue !== null && !isNaN(newValue)) {
+                    const newMotive = prompt(`Digite o motivo para o dia ${roundedDay}:`);
                     values[roundedDay] = parseFloat(newValue);
+                    motives[roundedDay] = newMotive || 'Sem motivo';
                     updateChart();
                 }
             }
@@ -174,14 +180,33 @@
 
             // Salvar no LocalStorage
             localStorage.setItem('chartValues', JSON.stringify(values));
+            localStorage.setItem('chartMotives', JSON.stringify(motives));
 
             chart.update();
+            updateValuesList(); // Atualizar lista de valores e motivos
+        }
+
+        function updateValuesList() {
+            const valuesListContainer = document.getElementById('values-list');
+            valuesListContainer.innerHTML = ''; // Limpar lista anterior
+
+            values.forEach((value, index) => {
+                if (value !== null) {
+                    const motive = motives[index];
+                    const div = document.createElement('div');
+                    div.style.marginBottom = '5px';
+                    div.innerHTML = `Dia ${index}: R$ ${value} - Motivo: ${motive}`;
+                    valuesListContainer.appendChild(div);
+                }
+            });
         }
 
         // Botão de limpar
         document.getElementById('clearButton').addEventListener('click', () => {
             localStorage.removeItem('chartValues');
+            localStorage.removeItem('chartMotives');
             values.fill(null); // Resetar valores
+            motives.fill(''); // Resetar motivos
             updateChart();
         });
 
