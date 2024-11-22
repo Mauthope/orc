@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gráfico Interativo com Tema Escuro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -97,13 +98,10 @@
                         annotations: {
                             avgLabel: {
                                 type: 'label',
-                                content: (ctx) => {
-                                    const average = calculateAverage(values);
-                                    return average !== null ? `Média: R$ ${average.toFixed(2)}` : '';
-                                },
-                                position: 'end',
+                                content: 'Média',
+                                position: 'start',
                                 xValue: 31,
-                                yAdjust: -20,
+                                yValue: (ctx) => calculateAverage(values),
                                 backgroundColor: 'lime',
                                 color: '#fff', // Cor do texto em branco
                                 font: {
