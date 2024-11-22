@@ -60,39 +60,23 @@
                         fill: false,
                         pointBackgroundColor: 'magenta',
                         pointRadius: 5,
-                        pointHoverRadius: 8,
-                        pointStyle: 'circle',
-                        tension: 0.4,
-                        datalabels: {
-                            color: 'white',
-                            align: 'top',
-                            formatter: (value) => `R$ ${value.toFixed(2)}`,
-                        },
                     },
                     {
                         label: 'Média dos Valores',
                         data: Array(32).fill(null), // Inicialmente vazio
                         borderColor: 'lime',
-                        borderDash: [5, 5],
                         borderWidth: 2,
                         fill: false,
                         pointRadius: 0,
                         tension: 0.4,
-                        datalabels: {
-                            color: 'lime',
-                            align: 'bottom',
-                            formatter: () => 'Média',
-                        },
                     },
                     {
-                        label: 'Linha do Valor 100',
+                        label: 'Valor 100',
                         data: Array(32).fill(100),
                         borderColor: 'orange',
-                        borderWidth: 1,
-                        borderDash: [10, 5],
+                        borderWidth: 2,
                         fill: false,
                         pointRadius: 0,
-                        tension: 0.4,
                     }
                 ],
             },
@@ -109,10 +93,27 @@
                             label: (context) => `R$ ${context.raw || 0}`,
                         },
                     },
-                    datalabels: {
-                        display: true,
-                        color: '#ffffff',
-                    }
+                    annotation: {
+                        annotations: {
+                            avgLabel: {
+                                type: 'label',
+                                content: (ctx) => {
+                                    const average = calculateAverage(values);
+                                    return average !== null ? `Média: R$ ${average.toFixed(2)}` : '';
+                                },
+                                position: 'end',
+                                xValue: 31,
+                                yAdjust: -20,
+                                backgroundColor: 'lime',
+                                color: '#000',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold',
+                                },
+                                enabled: true,
+                            },
+                        },
+                    },
                 },
                 scales: {
                     y: {
