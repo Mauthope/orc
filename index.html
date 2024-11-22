@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gráfico Interativo com Tema Escuro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -36,20 +35,36 @@
         button:hover {
             background-color: #ff6666;
         }
+        .motivo-container {
+            margin-top: 10px;
+            color: white;
+        }
+        .motivo-input {
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 5px;
+            border-radius: 5px;
+            width: 250px;
+        }
     </style>
 </head>
 <body>
     <h1>Gráfico de Valores Diários</h1>
     <canvas id="chart" width="800" height="400"></canvas>
+    <div class="motivo-container" id="motivoContainer">
+        <label for="motivoInput">Motivo para o valor:</label>
+        <input type="text" id="motivoInput" class="motivo-input" placeholder="Digite o motivo..." />
+        <button id="saveMotivo">Salvar Motivo</button>
+    </div>
     <button id="clearButton">Limpar Dados</button>
-
     <script>
         const ctx = document.getElementById('chart').getContext('2d');
         const days = Array.from({ length: 32 }, (_, i) => i); // Dias de 0 a 31
         const storedValues = JSON.parse(localStorage.getItem('chartValues')) || Array(32).fill(null); // Carregar do LocalStorage
-        const storedMotives = JSON.parse(localStorage.getItem('chartMotives')) || Array(32).fill(''); // Carregar motivos
+        const storedMotivos = JSON.parse(localStorage.getItem('motivos')) || Array(32).fill(null); // Carregar motivos
         const values = [...storedValues]; // Clonar para manipulação
-        const motives = [...storedMotives]; // Clonar para manipulação
+        const motivos = [...storedMotivos]; // Clonar para motivos
 
         const chart = new Chart(ctx, {
             type: 'line',
@@ -101,10 +116,13 @@
                         annotations: {
                             avgLabel: {
                                 type: 'label',
-                                content: 'Média',
-                                position: 'start',
+                                content: (ctx) => {
+                                    const average = calculateAverage(values);
+                                    return average !== null ? `Média: R$ ${average.toFixed(2)}` : '';
+                                },
+                                position: 'end',
                                 xValue: 31,
-                                yValue: (ctx) => calculateAverage(values),
+                                yAdjust: -20,
                                 backgroundColor: 'lime',
                                 color: '#fff', // Cor do texto em branco
                                 font: {
@@ -156,11 +174,20 @@
             if (roundedDay >= 0 && roundedDay <= 31) {
                 const newValue = prompt(`Digite o valor em R$ para o dia ${roundedDay}:`);
                 if (newValue !== null && !isNaN(newValue)) {
-                    const newMotive = prompt(`Digite o motivo para o dia ${roundedDay}:`);
                     values[roundedDay] = parseFloat(newValue);
-                    motives[roundedDay] = newMotive || 'Sem motivo';
                     updateChart();
                 }
+
+                // Mostrar o campo de motivo
+                document.getElementById('motivoContainer').style.display = 'block';
+                document.getElementById('saveMotivo').onclick = function () {
+                    const motivo = document.getElementById('motivoInput').value;
+                    motivos[roundedDay] = motivo;
+                    localStorage.setItem('motivos', JSON.stringify(motivos));
+                    updateChart();
+                    document.getElementById('motivoInput').value = ''; // Limpar campo de motivo
+                    document.getElementById('motivoContainer').style.display = 'none'; // Esconder campo
+                };
             }
         }
 
@@ -177,30 +204,14 @@
             chart.data.datasets[0].data = values;
             chart.data.datasets[1].data = Array(32).fill(average);
 
-            // Atualiza anotações com os motivos diretamente no gráfico
-            const annotations = chart.options.plugins.annotation.annotations;
-            annotations.avgLabel.yValue = average; // Atualiza a linha da média
-            annotations.avgLabel.xValue = 31; // Define posição da label
-
-            // Adiciona motivos como rótulos no gráfico
-            values.forEach((value, index) => {
-                if (value !== null) {
-                    annotations[`motiveLabel${index}`] = {
-                        type: 'label',
-                        content: motives[index],
-                        position: { x: index, y: value },
-                        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                        color: 'black',
-                        font: {
-                            size: 10,
-                        },
-                    };
-                }
-            });
+            // Atualiza as anotações para mostrar os motivos nos pontos
+            chart.data.datasets[0].pointBackgroundColor = (context) => {
+                const index = context.dataIndex;
+                return motivos[index] ? 'yellow' : 'magenta'; // Cor do ponto com motivo
+            };
 
             // Salvar no LocalStorage
             localStorage.setItem('chartValues', JSON.stringify(values));
-            localStorage.setItem('chartMotives', JSON.stringify(motives));
 
             chart.update();
         }
@@ -208,9 +219,9 @@
         // Botão de limpar
         document.getElementById('clearButton').addEventListener('click', () => {
             localStorage.removeItem('chartValues');
-            localStorage.removeItem('chartMotives');
+            localStorage.removeItem('motivos');
             values.fill(null); // Resetar valores
-            motives.fill(''); // Resetar motivos
+            motivos.fill(null); // Resetar motivos
             updateChart();
         });
 
