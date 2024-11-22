@@ -95,25 +95,20 @@
                         },
                     },
                 },
-                onClick: (e) => handleChartClick(e),
+                onClick: (e) => handleAxisClick(e),
             },
         });
 
-        function handleChartClick(event) {
-            const points = chart.getElementsAtEventForMode(
-                event,
-                'nearest',
-                { intersect: false },
-                true
-            );
+        function handleAxisClick(event) {
+            const xAxis = chart.scales.x;
+            const xValue = xAxis.getValueForPixel(event.x);
 
-            if (points.length > 0) {
-                const index = points[0].index; // Índice do ponto clicado
-                const day = days[index];
-
-                const newValue = prompt(`Digite o valor em R$ para o dia ${day}:`);
+            // Encontra o dia mais próximo ao clique
+            const closestDay = Math.round(xValue);
+            if (closestDay >= 0 && closestDay <= 31) {
+                const newValue = prompt(`Digite o valor em R$ para o dia ${closestDay}:`);
                 if (newValue !== null && !isNaN(newValue)) {
-                    values[index] = parseFloat(newValue);
+                    values[closestDay] = parseFloat(newValue);
                     updateChart();
                 }
             }
