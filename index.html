@@ -35,22 +35,17 @@
         button:hover {
             background-color: #ff6666;
         }
-        .info {
-            color: white;
-            margin-top: 10px;
-        }
     </style>
 </head>
 <body>
     <h1>Gráfico de Valores Diários</h1>
     <canvas id="chart" width="800" height="400"></canvas>
     <button id="clearButton">Limpar Dados</button>
-    <div class="info" id="info"></div>
     <script>
         const ctx = document.getElementById('chart').getContext('2d');
         const days = Array.from({ length: 32 }, (_, i) => i); // Dias de 0 a 31
-        const storedData = JSON.parse(localStorage.getItem('chartData')) || Array(32).fill({ value: null, reason: '' }); // Carregar dados do LocalStorage
-        const data = [...storedData]; // Clonar para manipulação
+        const storedValues = JSON.parse(localStorage.getItem('chartValues')) || Array(32).fill(null); // Carregar do LocalStorage
+        const values = [...storedValues]; // Clonar para manipulação
 
         const chart = new Chart(ctx, {
             type: 'line',
@@ -59,7 +54,7 @@
                 datasets: [
                     {
                         label: 'Valores Digitados',
-                        data: data.map(item => item.value),
+                        data: values,
                         borderColor: 'cyan',
                         borderWidth: 2,
                         fill: false,
@@ -103,7 +98,7 @@
                             avgLabel: {
                                 type: 'label',
                                 content: (ctx) => {
-                                    const average = calculateAverage(data.map(item => item.value));
+                                    const average = calculateAverage(values);
                                     return average !== null ? `Média: R$ ${average.toFixed(2)}` : '';
                                 },
                                 position: 'end',
@@ -158,14 +153,10 @@
 
             // Validar se o clique está dentro do range do gráfico
             if (roundedDay >= 0 && roundedDay <= 31) {
-                const value = prompt(`Digite o valor em R$ para o dia ${roundedDay}:`);
-                if (value !== null && !isNaN(value)) {
-                    const reason = prompt(`Digite o motivo para o valor de R$ ${value} no dia ${roundedDay}:`);
-                    if (reason !== null) {
-                        data[roundedDay] = { value: parseFloat(value), reason: reason };
-                        updateChart();
-                        showInfo(roundedDay);
-                    }
+                const newValue = prompt(`Digite o valor em R$ para o dia ${roundedDay}:`);
+                if (newValue !== null && !isNaN(newValue)) {
+                    values[roundedDay] = parseFloat(newValue);
+                    updateChart();
                 }
             }
         }
@@ -177,32 +168,22 @@
         }
 
         function updateChart() {
-            const average = calculateAverage(data.map(item => item.value));
+            const average = calculateAverage(values);
 
             // Atualiza os valores e a linha de média
-            chart.data.datasets[0].data = data.map(item => item.value);
+            chart.data.datasets[0].data = values;
             chart.data.datasets[1].data = Array(32).fill(average);
 
             // Salvar no LocalStorage
-            localStorage.setItem('chartData', JSON.stringify(data));
+            localStorage.setItem('chartValues', JSON.stringify(values));
 
             chart.update();
         }
 
-        function showInfo(day) {
-            const item = data[day];
-            const infoDiv = document.getElementById('info');
-            if (item.value !== null) {
-                infoDiv.innerHTML = `Dia ${day}: R$ ${item.value.toFixed(2)} - Motivo: ${item.reason}`;
-            } else {
-                infoDiv.innerHTML = `Dia ${day}: Sem dados registrados.`;
-            }
-        }
-
         // Botão de limpar
         document.getElementById('clearButton').addEventListener('click', () => {
-            localStorage.removeItem('chartData');
-            data.fill({ value: null, reason: '' }); // Resetar dados
+            localStorage.removeItem('chartValues');
+            values.fill(null); // Resetar valores
             updateChart();
         });
 
