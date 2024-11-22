@@ -28,8 +28,8 @@
     <canvas id="chart" width="800" height="400"></canvas>
     <script>
         const ctx = document.getElementById('chart').getContext('2d');
-        const days = Array.from({ length: 31 }, (_, i) => i + 1); // Dias de 1 a 31
-        const values = Array(31).fill(null); // Valores iniciais
+        const days = Array.from({ length: 32 }, (_, i) => i); // Dias de 0 a 31
+        const values = Array(32).fill(null); // Valores iniciais
 
         const chart = new Chart(ctx, {
             type: 'line',
@@ -47,7 +47,7 @@
                     },
                     {
                         label: 'Média dos Valores',
-                        data: Array(31).fill(null), // Inicialmente vazio
+                        data: Array(32).fill(null), // Inicialmente vazio
                         borderColor: 'green',
                         borderDash: [5, 5],
                         borderWidth: 2,
@@ -56,7 +56,7 @@
                     },
                     {
                         label: 'Linha do Valor 100',
-                        data: Array(31).fill(100),
+                        data: Array(32).fill(100),
                         borderColor: 'orange',
                         borderWidth: 1,
                         borderDash: [10, 5],
@@ -95,7 +95,7 @@
                         },
                     },
                 },
-                onClick: (e) => handleChartClick(e), // Vincula o evento de clique
+                onClick: (e) => handleChartClick(e),
             },
         });
 
@@ -103,7 +103,7 @@
             const points = chart.getElementsAtEventForMode(
                 event,
                 'nearest',
-                { intersect: true },
+                { intersect: false },
                 true
             );
 
@@ -130,7 +130,7 @@
 
             // Atualiza os valores e a linha de média
             chart.data.datasets[0].data = values;
-            chart.data.datasets[1].data = Array(31).fill(average);
+            chart.data.datasets[1].data = Array(32).fill(average);
 
             chart.update();
         }
