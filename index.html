@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gráfico Interativo com Rótulos</title>
+    <title>Gráfico Interativo com Tema Escuro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -60,6 +60,14 @@
                         fill: false,
                         pointBackgroundColor: 'magenta',
                         pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointStyle: 'circle',
+                        tension: 0.4,
+                        datalabels: {
+                            color: 'white',
+                            align: 'top',
+                            formatter: (value) => `R$ ${value.toFixed(2)}`,
+                        },
                     },
                     {
                         label: 'Média dos Valores',
@@ -69,6 +77,12 @@
                         borderWidth: 2,
                         fill: false,
                         pointRadius: 0,
+                        tension: 0.4,
+                        datalabels: {
+                            color: 'lime',
+                            align: 'bottom',
+                            formatter: () => 'Média',
+                        },
                     },
                     {
                         label: 'Linha do Valor 100',
@@ -78,6 +92,7 @@
                         borderDash: [10, 5],
                         fill: false,
                         pointRadius: 0,
+                        tension: 0.4,
                     }
                 ],
             },
@@ -96,20 +111,8 @@
                     },
                     datalabels: {
                         display: true,
-                        color: 'white',
-                        font: {
-                            size: 12,
-                        },
-                        formatter: (value, context) => {
-                            const datasetIndex = context.datasetIndex;
-                            if (datasetIndex === 1 && value !== null) {
-                                return `Média: R$ ${value.toFixed(2)}`;
-                            } else if (datasetIndex === 0 && value !== null) {
-                                return `R$ ${value}`;
-                            }
-                            return null;
-                        },
-                    },
+                        color: '#ffffff',
+                    }
                 },
                 scales: {
                     y: {
@@ -137,7 +140,6 @@
                 },
                 onClick: (e) => handleAxisClick(e),
             },
-            plugins: [ChartDataLabels],
         });
 
         function handleAxisClick(event) {
