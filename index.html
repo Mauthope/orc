@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gráfico Interativo com Tema Escuro</title>
+    <title>Gráficos Interativos com Rótulos</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -38,7 +38,7 @@
     </style>
 </head>
 <body>
-    <h1>Gráficos de Valores Diários</h1>
+    <h1>Gráficos Interativos</h1>
 
     <!-- Primeiro Gráfico -->
     <canvas id="chart1" width="800" height="400"></canvas>
@@ -51,7 +51,6 @@
     <script>
         const days = Array.from({ length: 32 }, (_, i) => i); // Dias de 0 a 31
 
-        // Função genérica para configurar gráficos
         function createChart(canvasId, clearButtonId, storageKeyValues, storageKeyMotivos) {
             const ctx = document.getElementById(canvasId).getContext('2d');
             const storedValues = JSON.parse(localStorage.getItem(storageKeyValues)) || Array(32).fill(null);
@@ -64,25 +63,22 @@
                 id: `${canvasId}DataLabelsPlugin`,
                 afterDatasetsDraw(chart, args, options) {
                     const { ctx } = chart;
-                    chart.data.datasets.forEach((dataset, datasetIndex) => {
-                        const meta = chart.getDatasetMeta(datasetIndex);
-                        meta.data.forEach((point, index) => {
-                            const value = dataset.data[index];
+                    chart.data.datasets[0].data.forEach((value, index) => {
+                        if (value !== null) {
+                            const point = chart.getDatasetMeta(0).data[index];
                             const motivo = motivos[index];
-                            if (value !== null && datasetIndex === 0) {
-                                ctx.save();
-                                ctx.font = '12px Arial';
-                                ctx.fillStyle = '#ffffff';
-                                ctx.textAlign = 'center';
-                                ctx.fillText(`R$ ${value}`, point.x, point.y - 10);
-                                if (motivo) {
-                                    ctx.font = '10px Arial';
-                                    ctx.fillStyle = '#ffcc00';
-                                    ctx.fillText(motivo, point.x, point.y + 15);
-                                }
-                                ctx.restore();
+                            ctx.save();
+                            ctx.font = '12px Arial';
+                            ctx.fillStyle = '#ffffff';
+                            ctx.textAlign = 'center';
+                            ctx.fillText(`R$ ${value}`, point.x, point.y - 10);
+                            if (motivo) {
+                                ctx.font = '10px Arial';
+                                ctx.fillStyle = '#ffcc00';
+                                ctx.fillText(motivo, point.x, point.y + 15);
                             }
-                        });
+                            ctx.restore();
+                        }
                     });
                 }
             });
@@ -102,19 +98,10 @@
                             pointRadius: 5,
                         },
                         {
-                            label: 'Média dos Valores',
-                            data: Array(32).fill(null),
+                            label: 'Valores Acumulados',
+                            data: calculateAccumulated(values),
                             borderColor: 'lime',
                             borderWidth: 2,
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.4,
-                        },
-                        {
-                            label: 'Valor 100',
-                            data: Array(32).fill(100),
-                            borderColor: 'orange',
-                            borderWidth: 8,
                             fill: false,
                             pointRadius: 0,
                         }
@@ -167,6 +154,14 @@
                 },
             });
 
+            function calculateAccumulated(data) {
+                return data.reduce((acc, val, i) => {
+                    if (val !== null) acc.push((acc[i - 1] || 0) + val);
+                    else acc.push(null);
+                    return acc;
+                }, []);
+            }
+
             function handleAxisClick(event) {
                 const xAxis = chart.scales.x;
                 const xPosition = event.x;
@@ -183,16 +178,9 @@
                 }
             }
 
-            function calculateAverage(data) {
-                const validValues = data.filter((v) => v !== null);
-                if (validValues.length === 0) return null;
-                return validValues.reduce((a, b) => a + b, 0) / validValues.length;
-            }
-
             function updateChart() {
-                const average = calculateAverage(values);
                 chart.data.datasets[0].data = values;
-                chart.data.datasets[1].data = Array(32).fill(average);
+                chart.data.datasets[1].data = calculateAccumulated(values);
                 localStorage.setItem(storageKeyValues, JSON.stringify(values));
                 localStorage.setItem(storageKeyMotivos, JSON.stringify(motivos));
                 chart.update();
