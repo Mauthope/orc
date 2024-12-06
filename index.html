@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gráficos com Motivos Separados</title>
+    <title>Gráfico Interativo com Tema Escuro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -16,14 +16,11 @@
             background-color: #121212;
             color: #ffffff;
         }
-        .chart-container {
-            width: 800px;
-            margin: 20px 0;
-        }
         canvas {
             background-color: #1e1e1e;
             border: 1px solid #333;
             border-radius: 8px;
+            margin: 20px 0;
         }
         button {
             background-color: #ff4d4d;
@@ -38,317 +35,195 @@
         button:hover {
             background-color: #ff6666;
         }
-        .total-display {
-            font-size: 18px;
-            margin-bottom: 10px;
-            text-align: center;
-        }
     </style>
 </head>
 <body>
-    <h1>Gráficos com Dados e Motivos Separados</h1>
-
-    <!-- Primeiro Gráfico -->
-    <div class="chart-container">
-        <div id="totalChart1" class="total-display"></div>
-        <canvas id="chart1"></canvas>
-        <button id="clearButton1">Limpar Dados do Gráfico 1</button>
+    <h1>Gráfico de Valores Diários</h1>
+    <div id="acumulado" style="font-size: 18px; margin-bottom: 10px; color: #00FF00;">
+        Valor Gasto Acumulado: R$ 0.00
     </div>
+    <canvas id="chart" width="800" height="400"></canvas>
+    <button id="clearButton">Limpar Dados</button>
+       <script>
+        const ctx = document.getElementById('chart').getContext('2d');
+        const days = Array.from({ length: 32 }, (_, i) => i); // Dias de 0 a 31
+        const storedValues = JSON.parse(localStorage.getItem('chartValues')) || Array(32).fill(null); // Carregar do LocalStorage
+        const storedMotivos = JSON.parse(localStorage.getItem('chartMotivos')) || Array(32).fill(null); // Carregar os motivos
+        const values = [...storedValues]; // Clonar para manipulação
+        const motivos = [...storedMotivos]; // Clonar para motivos
 
-    <!-- Segundo Gráfico -->
-    <div class="chart-container">
-        <div id="totalChart2" class="total-display"></div>
-        <canvas id="chart2"></canvas>
-        <button id="clearButton2">Limpar Dados do Gráfico 2</button>
-    </div>
+        const acumuladoDiv = document.getElementById('acumulado'); // Referência ao div
 
-    <script>
-        const days = Array.from({ length: 32 }, (_, i) => i);
+        function updateAcumulado() {
+            const acumulado = values.reduce((sum, value) => sum + (value || 0), 0); // Soma valores válidos
+            acumuladoDiv.textContent = `Valor Gasto Acumulado: R$ ${acumulado.toFixed(2)}`;
+        }
+Chart.register({
+        id: 'dataLabelsPlugin',
+        afterDatasetsDraw(chart, args, options) {
+            const { ctx } = chart;
+            chart.data.datasets.forEach((dataset, datasetIndex) => {
+                const meta = chart.getDatasetMeta(datasetIndex);
+                meta.data.forEach((point, index) => {
+                    const value = dataset.data[index];
+                    const motivo = motivos[index];
+                    if (value !== null && datasetIndex === 0) { // Exibir rótulos apenas para o primeiro dataset
+                        ctx.save();
 
-        // Função para criar e configurar o Gráfico 1
-                // Registro dos componentes do Chart.js para o primeiro gráfico
-        Chart.register(
-            Chart.controllers.line,
-            Chart.elements.LineElement,
-            Chart.elements.PointElement,
-            Chart.elements.TitleElement,
-            Chart.elements.TooltipElement,
-            Chart.elements.LegendElement,
-            Chart.scales.Linear,
-            Chart.scales.Category
-        );
+                        // Rótulo do valor
+                        ctx.font = '7px Arial';
+                        ctx.fillStyle = '#ffffff'; // Cor do texto
+                        ctx.textAlign = 'center';
+                        ctx.fillText(`R$ ${value}`, point.x, point.y - 10); // Posição do texto (acima do ponto)
 
-        function createChart1() {
-            const ctx1 = document.getElementById('chart1').getContext('2d');
-            const values1 = Array(32).fill(null);
-            const motivos1 = Array(32).fill(null);
-            const days = Array.from({ length: 32 }, (_, i) => i + 1);
-
-            const chart1 = new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: days,
-                    datasets: [
-                        {
-                            label: 'Valores Digitados',
-                            data: values1,
-                            borderColor: 'cyan',
-                            borderWidth: 2,
-                            fill: false,
-                            pointBackgroundColor: 'magenta',
-                            pointRadius: 5,
-                        },
-                        {
-                            label: 'Média dos Valores',
-                            data: Array(32).fill(null),
-                            borderColor: 'lime',
-                            borderWidth: 2,
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.4,
-                        },
-                        {
-                            label: 'Valor 100',
-                            data: Array(32).fill(100),
-                            borderColor: 'orange',
-                            borderWidth: 8,
-                            fill: false,
-                            pointRadius: 0,
+                        // Rótulo do motivo (se existir)
+                        if (motivo) {
+                            ctx.font = '6px Arial'; // Fonte menor para o motivo
+                            ctx.fillStyle = '#ffcc00'; // Cor do texto para o motivo
+                            ctx.fillText(motivo, point.x, point.y + 15); // Posição do texto (abaixo do ponto)
                         }
-                    ],
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: 'white',
-                            },
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: (context) => {
-                                    const value = context.raw || 0;
-                                    const day = context.dataIndex;
-                                    const motivo = motivos1[day] ? `Motivo: ${motivos1[day]}` : '';
-                                    return [`R$ ${value}`, motivo];
-                                },
-                            },
-                        },
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Valor (R$)',
-                                color: 'white',
-                            },
-                            ticks: {
-                                callback: (value) => `R$ ${value}`,
-                                color: 'white',
-                            },
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Dias',
-                                color: 'white',
-                            },
-                            ticks: {
-                                color: 'white',
-                            },
-                        },
-                    },
-                    onClick: (e) => handleAxisClick1(e),
-                },
-            });
 
-            function handleAxisClick1(event) {
-                const xAxis = chart1.scales.x;
-                const xPosition = event.x;
-                const closestDay = xAxis.getValueForPixel(xPosition);
-                const roundedDay = Math.round(closestDay);
-                if (roundedDay >= 0 && roundedDay <= 31) {
-                    const newValue = prompt(`Digite o valor em R$ para o dia ${roundedDay}:`);
-                    if (newValue !== null && !isNaN(newValue)) {
-                        values1[roundedDay] = parseFloat(newValue);
-                        const motivo = prompt(`Digite o motivo para o valor no dia ${roundedDay}:`);
-                        motivos1[roundedDay] = motivo;
-                        updateChart1();
+                        ctx.restore();
                     }
+                });
+            });
+        }
+    });
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: days,
+                datasets: [
+                    {
+                        label: 'Valores Digitados',
+                        data: values,
+                        borderColor: 'cyan',
+                        borderWidth: 2,
+                        fill: false,
+                        pointBackgroundColor: 'magenta',
+                        pointRadius: 5,
+                    },
+                    {
+                        label: 'Média dos Valores',
+                        data: Array(32).fill(null), // Inicialmente vazio
+                        borderColor: 'lime',
+                        borderWidth: 2,
+                        fill: false,
+                        pointRadius: 0,
+                        tension: 0.4,
+                    },
+                    {
+                        label: 'Valor 100',
+                        data: Array(32).fill(100),
+                        borderColor: 'orange',
+                        borderWidth: 8,
+                        fill: false,
+                        pointRadius: 0,
+                    }
+                ],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white',
+                        },
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const value = context.raw || 0;
+                                const day = context.dataIndex;
+                                const motivo = motivos[day] ? `Motivo: ${motivos[day]}` : '';
+                                return [`R$ ${value}`, motivo];
+                            },
+                        },
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Valor (R$)',
+                            color: 'white',
+                        },
+                        ticks: {
+                            callback: (value) => `R$ ${value}`,
+                            color: 'white',
+                        },
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Dias',
+                            color: 'white',
+                        },
+                        ticks: {
+                            color: 'white',
+                        },
+                    },
+                },
+                onClick: (e) => handleAxisClick(e),
+            },
+        });
+
+        function handleAxisClick(event) {
+            const xAxis = chart.scales.x;
+            const xPosition = event.x;
+
+            // Identificar o índice do dia clicado com base no eixo X
+            const closestDay = xAxis.getValueForPixel(xPosition);
+            const roundedDay = Math.round(closestDay);
+
+            // Validar se o clique está dentro do range do gráfico
+            if (roundedDay >= 0 && roundedDay <= 31) {
+                const newValue = prompt(`Digite o valor em R$ para o dia ${roundedDay}:`);
+                if (newValue !== null && !isNaN(newValue)) {
+                    values[roundedDay] = parseFloat(newValue);
+
+                    // Solicitar o motivo
+                    const motivo = prompt(`Digite o motivo para o valor no dia ${roundedDay}:`);
+                    motivos[roundedDay] = motivo;
+
+                    updateChart();
                 }
             }
-
-            function calculateAverage1(data) {
-                const validValues = data.filter((v) => v !== null);
-                if (validValues.length === 0) return null;
-                return validValues.reduce((a, b) => a + b, 0) / validValues.length;
-            }
-
-            function updateChart1() {
-                const average = calculateAverage1(values1);
-                chart1.data.datasets[0].data = values1;
-                chart1.data.datasets[1].data = Array(32).fill(average);
-                localStorage.setItem('chart1Values', JSON.stringify(values1));
-                localStorage.setItem('chart1Motivos', JSON.stringify(motivos1));
-                updateTotal1();
-                chart1.update();
-            }
-
-            document.getElementById('clearButton1').addEventListener('click', () => {
-                localStorage.removeItem('chart1Values');
-                localStorage.removeItem('chart1Motivos');
-                values1.fill(null);
-                motivos1.fill(null);
-                updateChart1();
-            });
-
-            updateChart1();
         }
 
-        // Registro dos componentes do Chart.js para o segundo gráfico
-        Chart.register(
-            Chart.controllers.line,
-            Chart.elements.LineElement,
-            Chart.elements.PointElement,
-            Chart.elements.TitleElement,
-            Chart.elements.TooltipElement,
-            Chart.elements.LegendElement,
-            Chart.scales.Linear,
-            Chart.scales.Category
-        );
-
-        function createChart2() {
-            const ctx2 = document.getElementById('chart2').getContext('2d');
-            const values2 = Array(32).fill(null);
-            const motivos2 = Array(32).fill(null);
-            const days = Array.from({ length: 32 }, (_, i) => i + 1);
-
-            const chart2 = new Chart(ctx2, {
-                type: 'line',
-                data: {
-                    labels: days,
-                    datasets: [
-                        {
-                            label: 'Valores Digitados',
-                            data: values2,
-                            borderColor: 'cyan',
-                            borderWidth: 2,
-                            fill: false,
-                            pointBackgroundColor: 'magenta',
-                            pointRadius: 5,
-                        },
-                        {
-                            label: 'Média dos Valores',
-                            data: Array(32).fill(null),
-                            borderColor: 'lime',
-                            borderWidth: 2,
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.4,
-                        },
-                        {
-                            label: 'Valor 100',
-                            data: Array(32).fill(100),
-                            borderColor: 'orange',
-                            borderWidth: 8,
-                            fill: false,
-                            pointRadius: 0,
-                        }
-                    ],
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: 'white',
-                            },
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: (context) => {
-                                    const value = context.raw || 0;
-                                    const day = context.dataIndex;
-                                    const motivo = motivos2[day] ? `Motivo: ${motivos2[day]}` : '';
-                                    return [`R$ ${value}`, motivo];
-                                },
-                            },
-                        },
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Valor (R$)',
-                                color: 'white',
-                            },
-                            ticks: {
-                                callback: (value) => `R$ ${value}`,
-                                color: 'white',
-                            },
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Dias',
-                                color: 'white',
-                            },
-                            ticks: {
-                                color: 'white',
-                            },
-                        },
-                    },
-                    onClick: (e) => handleAxisClick2(e),
-                },
-            });
-
-            function handleAxisClick2(event) {
-                const xAxis = chart2.scales.x;
-                const xPosition = event.x;
-                const closestDay = xAxis.getValueForPixel(xPosition);
-                const roundedDay = Math.round(closestDay);
-                if (roundedDay >= 0 && roundedDay <= 31) {
-                    const newValue = prompt(`Digite o valor em R$ para o dia ${roundedDay}:`);
-                    if (newValue !== null && !isNaN(newValue)) {
-                        values2[roundedDay] = parseFloat(newValue);
-                        const motivo = prompt(`Digite o motivo para o valor no dia ${roundedDay}:`);
-                        motivos2[roundedDay] = motivo;
-                        updateChart2();
-                    }
-                }
-            }
-
-            function calculateAverage2(data) {
-                const validValues = data.filter((v) => v !== null);
-                if (validValues.length === 0) return null;
-                return validValues.reduce((a, b) => a + b, 0) / validValues.length;
-            }
-
-            function updateChart2() {
-                const average = calculateAverage2(values2);
-                chart2.data.datasets[0].data = values2;
-                chart2.data.datasets[1].data = Array(32).fill(average);
-                localStorage.setItem('chart2Values', JSON.stringify(values2));
-                localStorage.setItem('chart2Motivos', JSON.stringify(motivos2));
-                chart2.update();
-            }
-
-            document.getElementById('clearButton2').addEventListener('click', () => {
-                localStorage.removeItem('chart2Values');
-                localStorage.removeItem('chart2Motivos');
-                values2.fill(null);
-                motivos2.fill(null);
-                updateChart2();
-            });
-
-            updateChart2();
+        function calculateAverage(data) {
+            const validValues = data.filter((v) => v !== null);
+            if (validValues.length === 0) return null;
+            return validValues.reduce((a, b) => a + b, 0) / validValues.length;
         }
 
-        createChart1();
-        createChart2();
+        function updateChart() {
+            const average = calculateAverage(values);
+
+            // Atualiza os valores e a linha de média
+            chart.data.datasets[0].data = values;
+            chart.data.datasets[1].data = Array(32).fill(average);
+
+            // Salvar no LocalStorage
+            localStorage.setItem('chartValues', JSON.stringify(values));
+            localStorage.setItem('chartMotivos', JSON.stringify(motivos));
+
+            updateAcumulado(); // Atualizar o acumulado
+            chart.update();
+        }
+
+        // Botão de limpar
+        document.getElementById('clearButton').addEventListener('click', () => {
+            localStorage.removeItem('chartValues');
+            localStorage.removeItem('chartMotivos');
+            values.fill(null); // Resetar valores
+            motivos.fill(null); // Resetar motivos
+            updateChart();
+        });
+
+        // Atualiza o gráfico e o acumulado na inicialização
+        updateChart();
     </script>
 </body>
 </html>
