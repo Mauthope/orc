@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gráficos Interativos com Rótulos</title>
+    <title>Gráficos Interativos</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -16,11 +16,14 @@
             background-color: #121212;
             color: #ffffff;
         }
+        .chart-container {
+            width: 800px;
+            margin: 20px 0;
+        }
         canvas {
             background-color: #1e1e1e;
             border: 1px solid #333;
             border-radius: 8px;
-            margin: 20px 0;
         }
         button {
             background-color: #ff4d4d;
@@ -35,50 +38,71 @@
         button:hover {
             background-color: #ff6666;
         }
+        .total-display {
+            font-size: 18px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <h1>Gráficos Interativos</h1>
+    <h1>Gráficos de Valores Diários</h1>
 
     <!-- Primeiro Gráfico -->
-    <canvas id="chart1" width="800" height="400"></canvas>
-    <button id="clearButton1">Limpar Dados do Gráfico 1</button>
+    <div class="chart-container">
+        <div id="totalChart1" class="total-display"></div>
+        <canvas id="chart1"></canvas>
+        <button id="clearButton1">Limpar Dados do Gráfico 1</button>
+    </div>
 
     <!-- Segundo Gráfico -->
-    <canvas id="chart2" width="800" height="400"></canvas>
-    <button id="clearButton2">Limpar Dados do Gráfico 2</button>
+    <div class="chart-container">
+        <div id="totalChart2" class="total-display"></div>
+        <canvas id="chart2"></canvas>
+        <button id="clearButton2">Limpar Dados do Gráfico 2</button>
+    </div>
 
     <script>
-        const days = Array.from({ length: 32 }, (_, i) => i); // Dias de 0 a 31
+        const days = Array.from({ length: 32 }, (_, i) => i);
 
-        function createChart(canvasId, clearButtonId, storageKeyValues, storageKeyMotivos) {
+        // Função para criar e configurar gráficos
+        function createChart(canvasId, clearButtonId, totalDisplayId, storageKeyValues, storageKeyMotivos) {
             const ctx = document.getElementById(canvasId).getContext('2d');
             const storedValues = JSON.parse(localStorage.getItem(storageKeyValues)) || Array(32).fill(null);
             const storedMotivos = JSON.parse(localStorage.getItem(storageKeyMotivos)) || Array(32).fill(null);
             const values = [...storedValues];
             const motivos = [...storedMotivos];
 
-            // Plugin para rótulos
+            const updateTotal = () => {
+                const total = values.reduce((acc, val) => (val !== null ? acc + val : acc), 0);
+                document.getElementById(totalDisplayId).textContent = `Valor Acumulado: R$ ${total.toFixed(2)}`;
+            };
+
+            // Plugin para rótulos ajustados
             Chart.register({
                 id: `${canvasId}DataLabelsPlugin`,
-                afterDatasetsDraw(chart, args, options) {
+                afterDatasetsDraw(chart) {
                     const { ctx } = chart;
-                    chart.data.datasets[0].data.forEach((value, index) => {
-                        if (value !== null) {
-                            const point = chart.getDatasetMeta(0).data[index];
+                    chart.data.datasets.forEach((dataset, datasetIndex) => {
+                        const meta = chart.getDatasetMeta(datasetIndex);
+                        meta.data.forEach((point, index) => {
+                            const value = dataset.data[index];
                             const motivo = motivos[index];
-                            ctx.save();
-                            ctx.font = '12px Arial';
-                            ctx.fillStyle = '#ffffff';
-                            ctx.textAlign = 'center';
-                            ctx.fillText(`R$ ${value}`, point.x, point.y - 10);
-                            if (motivo) {
-                                ctx.font = '10px Arial';
-                                ctx.fillStyle = '#ffcc00';
-                                ctx.fillText(motivo, point.x, point.y + 15);
+                            if (value !== null && datasetIndex === 0) {
+                                ctx.save();
+                                ctx.font = '12px Arial';
+                                ctx.fillStyle = '#ffffff';
+                                ctx.textAlign = 'center';
+                                const offsetY = motivo ? -20 : -10;
+                                ctx.fillText(`R$ ${value}`, point.x, point.y + offsetY);
+                                if (motivo) {
+                                    ctx.font = '10px Arial';
+                                    ctx.fillStyle = '#ffcc00';
+                                    ctx.fillText(motivo, point.x, point.y + 5);
+                                }
+                                ctx.restore();
                             }
-                            ctx.restore();
-                        }
+                        });
                     });
                 }
             });
@@ -98,10 +122,19 @@
                             pointRadius: 5,
                         },
                         {
-                            label: 'Valores Acumulados',
-                            data: calculateAccumulated(values),
+                            label: 'Média dos Valores',
+                            data: Array(32).fill(null),
                             borderColor: 'lime',
                             borderWidth: 2,
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.4,
+                        },
+                        {
+                            label: 'Valor 100',
+                            data: Array(32).fill(100),
+                            borderColor: 'orange',
+                            borderWidth: 8,
                             fill: false,
                             pointRadius: 0,
                         }
@@ -154,14 +187,6 @@
                 },
             });
 
-            function calculateAccumulated(data) {
-                return data.reduce((acc, val, i) => {
-                    if (val !== null) acc.push((acc[i - 1] || 0) + val);
-                    else acc.push(null);
-                    return acc;
-                }, []);
-            }
-
             function handleAxisClick(event) {
                 const xAxis = chart.scales.x;
                 const xPosition = event.x;
@@ -178,11 +203,19 @@
                 }
             }
 
+            function calculateAverage(data) {
+                const validValues = data.filter((v) => v !== null);
+                if (validValues.length === 0) return null;
+                return validValues.reduce((a, b) => a + b, 0) / validValues.length;
+            }
+
             function updateChart() {
+                const average = calculateAverage(values);
                 chart.data.datasets[0].data = values;
-                chart.data.datasets[1].data = calculateAccumulated(values);
+                chart.data.datasets[1].data = Array(32).fill(average);
                 localStorage.setItem(storageKeyValues, JSON.stringify(values));
                 localStorage.setItem(storageKeyMotivos, JSON.stringify(motivos));
+                updateTotal();
                 chart.update();
             }
 
@@ -199,8 +232,8 @@
         }
 
         // Criação dos gráficos
-        const chart1 = createChart('chart1', 'clearButton1', 'chart1Values', 'chart1Motivos');
-        const chart2 = createChart('chart2', 'clearButton2', 'chart2Values', 'chart2Motivos');
+        const chart1 = createChart('chart1', 'clearButton1', 'totalChart1', 'chart1Values', 'chart1Motivos');
+        const chart2 = createChart('chart2', 'clearButton2', 'totalChart2', 'chart2Values', 'chart2Motivos');
     </script>
 </body>
 </html>
