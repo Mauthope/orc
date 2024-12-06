@@ -68,7 +68,7 @@ Chart.register({
                     const value = dataset.data[index];
                     if (value !== null && datasetIndex === 0) { // Exibir rótulos apenas para o primeiro dataset
                         ctx.save();
-                        ctx.font = '5px Arial';
+                        ctx.font = '7px Arial';
                         ctx.fillStyle = '#ffffff'; // Cor do texto
                         ctx.textAlign = 'center';
                         ctx.fillText(`R$ ${value}`, point.x, point.y - 10); // Posição do texto (acima do ponto)
