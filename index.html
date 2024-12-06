@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gráficos com Motivos Separados</title>
+    <title>Gráficos Independentes</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -46,7 +46,7 @@
     </style>
 </head>
 <body>
-    <h1>Gráficos com Dados e Motivos Separados</h1>
+    <h1>Gráficos com Configurações Isoladas</h1>
 
     <!-- Primeiro Gráfico -->
     <div class="chart-container">
@@ -65,7 +65,6 @@
     <script>
         const days = Array.from({ length: 32 }, (_, i) => i);
 
-        // Função para criar e configurar gráficos
         function createChart(canvasId, clearButtonId, totalDisplayId, storageKeyValues, storageKeyMotivos) {
             const ctx = document.getElementById(canvasId).getContext('2d');
             const storedValues = JSON.parse(localStorage.getItem(storageKeyValues)) || Array(32).fill(null);
