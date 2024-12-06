@@ -66,12 +66,23 @@ Chart.register({
                 const meta = chart.getDatasetMeta(datasetIndex);
                 meta.data.forEach((point, index) => {
                     const value = dataset.data[index];
+                    const motivo = motivos[index];
                     if (value !== null && datasetIndex === 0) { // Exibir rótulos apenas para o primeiro dataset
                         ctx.save();
+
+                        // Rótulo do valor
                         ctx.font = '7px Arial';
                         ctx.fillStyle = '#ffffff'; // Cor do texto
                         ctx.textAlign = 'center';
                         ctx.fillText(`R$ ${value}`, point.x, point.y - 10); // Posição do texto (acima do ponto)
+
+                        // Rótulo do motivo (se existir)
+                        if (motivo) {
+                            ctx.font = '6px Arial'; // Fonte menor para o motivo
+                            ctx.fillStyle = '#ffcc00'; // Cor do texto para o motivo
+                            ctx.fillText(motivo, point.x, point.y + 15); // Posição do texto (abaixo do ponto)
+                        }
+
                         ctx.restore();
                     }
                 });
