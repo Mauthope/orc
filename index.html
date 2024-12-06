@@ -39,15 +39,25 @@
 </head>
 <body>
     <h1>Gráfico de Valores Diários</h1>
+    <div id="acumulado" style="font-size: 18px; margin-bottom: 10px; color: #00FF00;">
+        Valor Gasto Acumulado: R$ 0.00
+    </div>
     <canvas id="chart" width="800" height="400"></canvas>
     <button id="clearButton">Limpar Dados</button>
-    <script>
+       <script>
         const ctx = document.getElementById('chart').getContext('2d');
         const days = Array.from({ length: 32 }, (_, i) => i); // Dias de 0 a 31
         const storedValues = JSON.parse(localStorage.getItem('chartValues')) || Array(32).fill(null); // Carregar do LocalStorage
         const storedMotivos = JSON.parse(localStorage.getItem('chartMotivos')) || Array(32).fill(null); // Carregar os motivos
         const values = [...storedValues]; // Clonar para manipulação
         const motivos = [...storedMotivos]; // Clonar para motivos
+
+        const acumuladoDiv = document.getElementById('acumulado'); // Referência ao div
+
+        function updateAcumulado() {
+            const acumulado = values.reduce((sum, value) => sum + (value || 0), 0); // Soma valores válidos
+            acumuladoDiv.textContent = `Valor Gasto Acumulado: R$ ${acumulado.toFixed(2)}`;
+        }
 
         const chart = new Chart(ctx, {
             type: 'line',
@@ -97,27 +107,6 @@
                                 const day = context.dataIndex;
                                 const motivo = motivos[day] ? `Motivo: ${motivos[day]}` : '';
                                 return [`R$ ${value}`, motivo];
-                            },
-                        },
-                    },
-                    annotation: {
-                        annotations: {
-                            avgLabel: {
-                                type: 'label',
-                                content: (ctx) => {
-                                    const average = calculateAverage(values);
-                                    return average !== null ? `Média: R$ ${average.toFixed(2)}` : '';
-                                },
-                                position: 'end',
-                                xValue: 31,
-                                yAdjust: -20,
-                                backgroundColor: 'lime',
-                                color: '#fff', // Cor do texto em branco
-                                font: {
-                                    size: 12,
-                                    weight: 'bold',
-                                },
-                                enabled: true,
                             },
                         },
                     },
@@ -190,6 +179,7 @@
             localStorage.setItem('chartValues', JSON.stringify(values));
             localStorage.setItem('chartMotivos', JSON.stringify(motivos));
 
+            updateAcumulado(); // Atualizar o acumulado
             chart.update();
         }
 
@@ -202,7 +192,7 @@
             updateChart();
         });
 
-        // Atualiza o gráfico na inicialização para carregar do LocalStorage
+        // Atualiza o gráfico e o acumulado na inicialização
         updateChart();
     </script>
 </body>
